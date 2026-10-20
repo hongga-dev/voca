@@ -64,7 +64,8 @@ function App() {
     event.preventDefault()
     if (!supabase) return
     setBusy(true)
-    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}`
+    // Resolve Vite's base path (including a GitHub Pages repository path) as a URL.
+    const redirectTo = new URL(import.meta.env.BASE_URL, window.location.href).href
     const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
     setBusy(false)
     if (error) setNotice(error.message)
