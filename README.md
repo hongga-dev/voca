@@ -6,7 +6,7 @@ Day별로 영단어, 한국어 뜻, 영어 예문을 저장하고 모바일에�
 
 1. Node.js 22 이상을 설치합니다.
 2. Supabase 프로젝트를 만들고 SQL Editor에서 [`supabase/schema.sql`](supabase/schema.sql)을 실행합니다.
-3. Authentication → URL Configuration에서 Site URL과 Redirect URLs에 로컬 주소 `http://localhost:5173/` 및 배포 주소를 등록합니다. GitHub Pages의 프로젝트 사이트라면 `https://<계정>.github.io/<저장소>/` 형식입니다.
+3. Authentication → URL Configuration에서 Site URL에는 배포 주소를 입력하고, Redirect URLs에는 로컬 주소 `http://localhost:5173/`와 정확한 배포 주소를 모두 등록합니다. GitHub Pages의 프로젝트 사이트라면 `https://<계정>.github.io/<저장소>/` 형식입니다. 인증 링크는 현재 페이지 기준으로 이 저장소 경로를 포함해 이동합니다.
 4. Authentication → Providers → Email에서 이메일 OTP가 활성화되어 있는지 확인하고, 필요하면 SMTP를 설정합니다.
 5. `.env.example`을 `.env.local`로 복사하고 Supabase Project URL과 publishable/anon key를 입력합니다.
 6. 실행합니다.

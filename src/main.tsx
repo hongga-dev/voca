@@ -64,12 +64,18 @@ function App() {
     event.preventDefault()
     if (!supabase) return
     setBusy(true)
+    setNotice('')
     // Resolve Vite's base path (including a GitHub Pages repository path) as a URL.
     const redirectTo = new URL(import.meta.env.BASE_URL, window.location.href).href
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
-    setBusy(false)
-    if (error) setNotice(error.message)
-    else setSent(true)
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirectTo } })
+      if (error) setNotice(error.message)
+      else setSent(true)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '로그인 링크 요청에 실패했어요. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function addDay() {
@@ -130,7 +136,7 @@ function App() {
 
   if (!supabase) return <SetupScreen />
   if (loading) return <div className="loading-screen"><div className="loader"/><span>단어장을 준비하고 있어요</span></div>
-  if (!user) return <main className="auth-shell"><div className="auth-card"><Brand/><div className="eyebrow">MY WORD JOURNAL</div><h1>오늘의 단어를<br/>차곡차곡 모아요</h1><p className="muted">이메일로 로그인 링크를 보내드릴게요.<br/>나만의 단어장이 기기 간에 동기화됩니다.</p>{sent ? <div className="success-box"><span className="success-icon">✉</span><strong>메일을 확인해 주세요</strong><span>{email} 주소로 로그인 링크를 보냈어요.</span></div> : <form onSubmit={sendLoginLink} className="auth-form"><label htmlFor="email">이메일 주소</label><input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required/><button className="button primary full" disabled={busy}>{busy ? '전송 중…' : '로그인 링크 받기'} <span>→</span></button></form>}<p className="auth-foot">계정이 없으면 로그인 링크로 자동 가입돼요.</p></div><span className="auth-decoration">A</span></main>
+  if (!user) return <main className="auth-shell"><div className="auth-card"><Brand/><div className="eyebrow">MY WORD JOURNAL</div><h1>오늘의 단어를<br/>차곡차곡 모아요</h1><p className="muted">이메일로 로그인 링크를 보내드릴게요.<br/>나만의 단어장이 기기 간에 동기화됩니다.</p>{sent ? <div className="success-box"><span className="success-icon">✉</span><strong>메일을 확인해 주세요</strong><span>{email} 주소로 로그인 링크를 보냈어요.</span></div> : <form onSubmit={sendLoginLink} className="auth-form"><label htmlFor="email">이메일 주소</label><input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setNotice('') }} placeholder="name@example.com" required/><button className="button primary full" disabled={busy}>{busy ? '전송 중…' : '로그인 링크 받기'} <span>→</span></button>{busy && <p className="auth-status" role="status">Supabase에 로그인 링크를 요청하고 있어요…</p>}{notice && <p className="auth-error" role="alert">요청 실패: {notice}</p>}</form>}<p className="auth-foot">계정이 없으면 로그인 링크로 자동 가입돼요.</p></div><span className="auth-decoration">A</span></main>
 
   return <div className="app-shell">
     <header className="topbar"><Brand/><div className="top-actions"><span className="user-pill"><span className="online-dot"/>{user.email}</span><button className="icon-button logout" aria-label="로그아웃" title="로그아웃" onClick={() => supabase.auth.signOut()}>↗</button></div></header>
