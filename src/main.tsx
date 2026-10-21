@@ -13,8 +13,9 @@ const supabase: SupabaseClient | null = supabaseUrl && supabaseKey ? createClien
 function App() {
   const [user, setUser] = React.useState<User | null>(null)
   const [loading, setLoading] = React.useState(Boolean(supabase))
-  const [email, setEmail] = React.useState('')
-  const [sent, setSent] = React.useState(false)
+  const [username, setUsername] = React.useState('')
+  const [password, setPassword] = React.useState('')
+  const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('login')
   const [days, setDays] = React.useState<Day[]>([])
   const [words, setWords] = React.useState<Word[]>([])
   const [selectedDay, setSelectedDay] = React.useState<number | null>(null)
@@ -60,19 +61,38 @@ function App() {
 
   React.useEffect(() => { void refresh() }, [refresh])
 
-  async function sendLoginLink(event: React.FormEvent) {
+  async function authenticate(event: React.FormEvent) {
     event.preventDefault()
     if (!supabase) return
+    const normalizedUsername = username.trim().toLowerCase()
+    if (!/^[a-z0-9_-]{3,24}$/.test(normalizedUsername)) {
+      setNotice('아이디는 영문 소문자, 숫자, 밑줄(_) 또는 하이픈(-) 3~24자로 입력해 주세요.')
+      return
+    }
+    if (password.length < 8) {
+      setNotice('비밀번호를 8자 이상 입력해 주세요.')
+      return
+    }
+
     setBusy(true)
     setNotice('')
-    // Resolve Vite's base path (including a GitHub Pages repository path) as a URL.
-    const redirectTo = new URL(import.meta.env.BASE_URL, window.location.href).href
+    // Supabase Auth requires an email for password auth; this reserved address is never mailed.
+    const authEmail = `${normalizedUsername}@voca.invalid`
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirectTo } })
-      if (error) setNotice(error.message)
-      else setSent(true)
+      if (authMode === 'signup') {
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail,
+          password,
+          options: { data: { username: normalizedUsername } },
+        })
+        if (error) setNotice(error.message)
+        else if (!data.session) setNotice('계정은 생성됐지만 바로 로그인되지 않았어요. Supabase에서 Email 확인 설정을 꺼 주세요.')
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password })
+        if (error) setNotice('아이디 또는 비밀번호를 확인해 주세요.')
+      }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : '로그인 링크 요청에 실패했어요. 잠시 후 다시 시도해 주세요.')
+      setNotice(error instanceof Error ? error.message : '인증 요청에 실패했어요. 잠시 후 다시 시도해 주세요.')
     } finally {
       setBusy(false)
     }
@@ -136,10 +156,10 @@ function App() {
 
   if (!supabase) return <SetupScreen />
   if (loading) return <div className="loading-screen"><div className="loader"/><span>단어장을 준비하고 있어요</span></div>
-  if (!user) return <main className="auth-shell"><div className="auth-card"><Brand/><div className="eyebrow">MY WORD JOURNAL</div><h1>오늘의 단어를<br/>차곡차곡 모아요</h1><p className="muted">이메일로 로그인 링크를 보내드릴게요.<br/>나만의 단어장이 기기 간에 동기화됩니다.</p>{sent ? <div className="success-box"><span className="success-icon">✉</span><strong>메일을 확인해 주세요</strong><span>{email} 주소로 로그인 링크를 보냈어요.</span></div> : <form onSubmit={sendLoginLink} className="auth-form"><label htmlFor="email">이메일 주소</label><input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); setNotice('') }} placeholder="name@example.com" required/><button className="button primary full" disabled={busy}>{busy ? '전송 중…' : '로그인 링크 받기'} <span>→</span></button>{busy && <p className="auth-status" role="status">Supabase에 로그인 링크를 요청하고 있어요…</p>}{notice && <p className="auth-error" role="alert">요청 실패: {notice}</p>}</form>}<p className="auth-foot">계정이 없으면 로그인 링크로 자동 가입돼요.</p></div><span className="auth-decoration">A</span></main>
+  if (!user) return <main className="auth-shell"><div className="auth-card"><Brand/><div className="eyebrow">MY WORD JOURNAL</div><h1>오늘의 단어를<br/>차곡차곡 모아요</h1><p className="muted">아이디와 비밀번호로 로그인해요.<br/>단어장은 계정별로 안전하게 저장됩니다.</p><div className="auth-tabs"><button type="button" className={authMode === 'login' ? 'active' : ''} onClick={() => { setAuthMode('login'); setNotice('') }}>로그인</button><button type="button" className={authMode === 'signup' ? 'active' : ''} onClick={() => { setAuthMode('signup'); setNotice('') }}>회원가입</button></div><form onSubmit={authenticate} className="auth-form"><label htmlFor="username">아이디</label><input id="username" type="text" value={username} onChange={(e) => { setUsername(e.target.value); setNotice('') }} placeholder="영문 소문자·숫자 3~24자" autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_-]{3,24}" required/><label htmlFor="password">비밀번호</label><input id="password" type="password" value={password} onChange={(e) => { setPassword(e.target.value); setNotice('') }} placeholder="8자 이상" autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} minLength={8} required/><button className="button primary full" disabled={busy}>{busy ? '확인 중…' : authMode === 'login' ? '로그인' : '계정 만들기'} <span>→</span></button>{busy && <p className="auth-status" role="status">계정을 확인하고 있어요…</p>}{notice && <p className="auth-error" role="alert">{notice}</p>}</form><p className="auth-foot">아이디는 영문 소문자, 숫자, _ 또는 -로 3~24자예요.<br/>비밀번호를 잊으면 관리자가 재설정해야 합니다.</p></div><span className="auth-decoration">A</span></main>
 
   return <div className="app-shell">
-    <header className="topbar"><Brand/><div className="top-actions"><span className="user-pill"><span className="online-dot"/>{user.email}</span><button className="icon-button logout" aria-label="로그아웃" title="로그아웃" onClick={() => supabase.auth.signOut()}>↗</button></div></header>
+    <header className="topbar"><Brand/><div className="top-actions"><span className="user-pill"><span className="online-dot"/>{user.user_metadata.username ?? user.email}</span><button className="icon-button logout" aria-label="로그아웃" title="로그아웃" onClick={() => supabase.auth.signOut()}>↗</button></div></header>
     <main className="main-content">
       <section className="greeting"><div><div className="eyebrow">YOUR PERSONAL VOCABULARY</div><h1>단어의 하루<span className="period">.</span></h1><p>매일 조금씩, 나만의 속도로 쌓아가요.</p></div><div className="greeting-mark">✳</div></section>
       {notice && <div className="notice" role="status">{notice}<button onClick={() => setNotice('')} aria-label="알림 닫기">×</button></div>}

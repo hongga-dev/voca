@@ -4,3 +4,5 @@
 @media(min-width:900px){.main-content{padding-bottom:15px}.greeting{padding-top:64px}}
 
 .auth-status,.auth-error{font-size:11px;line-height:1.6;margin:10px 2px 0}.auth-status{color:#777b71}.auth-error{color:#a14336;background:#faeeeb;border-radius:8px;padding:10px 11px;overflow-wrap:anywhere}
+
+.auth-tabs{display:flex;gap:5px;background:#f0f0e9;padding:4px;border-radius:9px;margin:24px 0 0}.auth-tabs button{flex:1;border:0;background:transparent;color:#81847a;font-size:11px;font-weight:700;padding:9px;border-radius:6px}.auth-tabs button.active{background:var(--paper);color:var(--green);box-shadow:0 1px 4px rgba(30,40,25,.08)}.auth-form label:not(:first-child){margin-top:14px}

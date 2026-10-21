@@ -1,13 +1,13 @@
 # 단어의 하루
 
-Day별로 영단어, 한국어 뜻, 영어 예문을 저장하고 모바일에서 학습하는 React + TypeScript 웹앱입니다. Supabase 이메일 링크 인증으로 로그인하며, 데이터는 계정별로 동기화됩니다.
+Day별로 영단어, 한국어 뜻, 영어 예문을 저장하고 모바일에서 학습하는 React + TypeScript 웹앱입니다. 아이디·비밀번호로 로그인하며, Supabase Auth가 계정별 데이터를 보호합니다. 아이디 로그인을 위해 앱은 아이디를 내부 가상 이메일 주소로 변환합니다.
 
 ## 로컬 실행
 
 1. Node.js 22 이상을 설치합니다.
 2. Supabase 프로젝트를 만들고 SQL Editor에서 [`supabase/schema.sql`](supabase/schema.sql)을 실행합니다.
 3. Authentication → URL Configuration에서 Site URL에는 배포 주소를 입력하고, Redirect URLs에는 로컬 주소 `http://localhost:5173/`와 정확한 배포 주소를 모두 등록합니다. GitHub Pages의 프로젝트 사이트라면 `https://<계정>.github.io/<저장소>/` 형식입니다. 인증 링크는 현재 페이지 기준으로 이 저장소 경로를 포함해 이동합니다.
-4. Authentication → Providers → Email에서 이메일 OTP가 활성화되어 있는지 확인하고, 필요하면 SMTP를 설정합니다.
+4. Authentication → Providers → Email에서 Email provider는 켜고, Confirm email은 끕니다. 앱은 이메일 없이 공개 가입을 받으므로 인증 메일은 보내지 않습니다.
 5. `.env.example`을 `.env.local`로 복사하고 Supabase Project URL과 publishable/anon key를 입력합니다.
 6. 실행합니다.
 
@@ -32,8 +32,14 @@ npm run dev
 
 ## 기능
 
-- 이메일 링크 로그인 및 새 사용자 자동 가입
+- 아이디·비밀번호 회원가입과 로그인 (아이디: 영문 소문자·숫자·밑줄·하이픈 3~24자)
 - Day 생성 및 Day별 단어 수 표시
 - 단어·뜻·영어 예문 등록, 삭제 전 확인 후 삭제
 - 학습 시작 시 순서 섞기, 터치로 뜻/예문 공개 후 다음 단어로 진행
 - 계정 간 데이터 분리 (Supabase Row Level Security)
+
+## 아이디 계정 참고
+
+- 비밀번호는 최소 8자입니다. 이메일 주소를 받지 않으므로 비밀번호 재설정은 셀프서비스로 제공되지 않습니다. 관리자가 Supabase Auth에서 재설정해야 합니다.
+- 회원가입 시 아이디가 Supabase Auth 내부의 `@voca.invalid` 주소로 변환됩니다. 이 가상 주소로 메일을 발송하지 않습니다.
+- 기존 이메일 인증으로 만들어진 계정과 그 계정의 단어 데이터는 새 아이디 계정으로 자동 이전되지 않습니다. 기존 데이터를 보존해야 하면 계정 연결/이전 작업이 별도로 필요합니다.
